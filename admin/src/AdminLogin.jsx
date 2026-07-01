@@ -4,7 +4,7 @@ import axios from 'axios';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 
-console.log(import.meta.env.VITE_DEVICE_IP);
+const apiBaseUrl = import.meta.env.VITE_DEVICE_IP;
 
 const Container = styled.div`
   display: flex;
@@ -116,22 +116,39 @@ const Footer = styled.footer`
 const AdminLogin = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const login = async () => {
+    if (!apiBaseUrl) {
+      alert('Backend URL is missing. Add VITE_DEVICE_IP in Vercel environment variables.');
+      return;
+    }
+
+    if (!email || !password) {
+      alert('Please enter email and password');
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      const response = await axios.post(`${import.meta.env.VITE_DEVICE_IP}/admin/login`, { email, password });
+      const response = await axios.post(`${apiBaseUrl}/admin/login`, { email, password });
       const { token } = response.data;
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       localStorage.setItem('token', token);
       onLogin();
-      const homeResponse = await axios.get(`${import.meta.env.VITE_DEVICE_IP}/home`);
+      const homeResponse = await axios.get(`${apiBaseUrl}/home`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (homeResponse.status === 200) {
         navigate('/home');
       }
     } catch (error) {
       console.error('Login failed', error);
-      alert('Login failed');
+      const message = error.response?.data?.message || error.response?.data || error.message || 'Login failed';
+      alert(`Login failed: ${message}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -158,7 +175,9 @@ const AdminLogin = ({ onLogin }) => {
               onChange={(e) => setPassword(e.target.value)} 
             />
           </InputContainer>
-          <LoginButton onClick={login}>Login</LoginButton>
+          <LoginButton onClick={login} disabled={isSubmitting}>
+            {isSubmitting ? 'Logging in...' : 'Login'}
+          </LoginButton>
         </LoginContainer>
       </Container>
       <Footer>&copy; 2025 GuardianSync. All rights reserved.</Footer>

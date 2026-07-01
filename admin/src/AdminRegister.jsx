@@ -4,6 +4,8 @@ import axios from 'axios';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 
+const apiBaseUrl = import.meta.env.VITE_DEVICE_IP;
+
 const Navbar = styled.nav`
    width: 100%;
   padding: 0.8rem 2rem;
@@ -122,15 +124,30 @@ const AdminRegister = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const register = async () => {
+    if (!apiBaseUrl) {
+      alert('Backend URL is missing. Add VITE_DEVICE_IP in Vercel environment variables.');
+      return;
+    }
+
+    if (!name || !email || !password) {
+      alert('Please enter name, email, and password');
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      await axios.post(`${import.meta.env.VITE_DEVICE_IP}/admin/register`, { name, email, password });
+      await axios.post(`${apiBaseUrl}/admin/register`, { name, email, password });
       alert('Admin registered successfully');
-      navigate('/admin/login');
+      navigate('/admin-login');
     } catch (error) {
-      alert('Registration failed');
+      const message = error.response?.data?.message || error.response?.data || error.message || 'Registration failed';
+      alert(`Registration failed: ${message}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -165,7 +182,9 @@ const AdminRegister = () => {
               onChange={(e) => setPassword(e.target.value)} 
             />
           </InputContainer>
-          <RegisterButton onClick={register}>Register</RegisterButton>
+          <RegisterButton onClick={register} disabled={isSubmitting}>
+            {isSubmitting ? 'Registering...' : 'Register'}
+          </RegisterButton>
         </RegisterContainer>
       </Container>
       <Footer>&copy; 2025 GuardianSync. All rights reserved.</Footer>

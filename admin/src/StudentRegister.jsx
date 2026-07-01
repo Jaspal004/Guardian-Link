@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import axios from "axios";
 import styled from "styled-components";
 
+const apiBaseUrl = import.meta.env.VITE_DEVICE_IP;
+
 const RegisterContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -69,6 +71,7 @@ const StudentRegister = () => {
   const [route, setRoute] = useState("");
   const [busNumber, setBusNumber] = useState("");
   const [photo, setPhoto] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handlePhotoCapture = (event) => {
     const file = event.target.files[0];
@@ -116,11 +119,17 @@ const StudentRegister = () => {
   };
 
   const register = async () => {
+    if (!apiBaseUrl) {
+      alert("Backend URL is missing. Add VITE_DEVICE_IP in Vercel environment variables.");
+      return;
+    }
+
     if (!validate()) return;
 
+    setIsSubmitting(true);
     try {
       await axios.post(
-        `${import.meta.env.VITE_DEVICE_IP}/student/register`,
+        `${apiBaseUrl}/student/register`,
         {
           name,
           number,
@@ -134,7 +143,10 @@ const StudentRegister = () => {
       );
       alert("Student registered successfully");
     } catch (error) {
-      alert("Registration failed");
+      const message = error.response?.data?.message || error.response?.data || error.message || "Registration failed";
+      alert(`Registration failed: ${message}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -150,7 +162,9 @@ const StudentRegister = () => {
         <InputField type="text" placeholder="Route" value={route} onChange={(e) => setRoute(e.target.value)} />
         <InputField type="text" placeholder="Bus Number" value={busNumber} onChange={(e) => setBusNumber(e.target.value)} />
         <InputField type="file" accept="image/*" onChange={handlePhotoCapture} />
-        <RegisterButton onClick={register}>Register</RegisterButton>
+        <RegisterButton onClick={register} disabled={isSubmitting}>
+          {isSubmitting ? "Registering..." : "Register"}
+        </RegisterButton>
       </FormCard>
     </RegisterContainer>
   );

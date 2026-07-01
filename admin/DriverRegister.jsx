@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import styled from 'styled-components';
 
+const apiBaseUrl = import.meta.env.VITE_DEVICE_IP;
+
 const RegisterContainer = styled.div`
   display: flex;
   justify-content: center;
@@ -66,6 +68,7 @@ const DriverRegister = () => {
   const [busNumber, setBusNumber] = useState('');
   const [password, setPassword] = useState('');
   const [route, setRoute] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validate = () => {
     if (!/^\d{4}$/.test(busNumber)) {
@@ -84,17 +87,26 @@ const DriverRegister = () => {
   };
 
   const register = async () => {
+    if (!apiBaseUrl) {
+      alert('Backend URL is missing. Add VITE_DEVICE_IP in Vercel environment variables.');
+      return;
+    }
+
     if (!validate()) return;
 
+    setIsSubmitting(true);
     try {
-      await axios.post(`${import.meta.env.VITE_DEVICE_IP}/register`, {
+      await axios.post(`${apiBaseUrl}/register`, {
         busNumber,
         password,
         route,
       });
       alert('Driver registered successfully');
     } catch (error) {
-      alert('Registration failed');
+      const message = error.response?.data?.message || error.response?.data || error.message || 'Registration failed';
+      alert(`Registration failed: ${message}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -120,7 +132,9 @@ const DriverRegister = () => {
           value={route}
           onChange={(e) => setRoute(e.target.value)}
         />
-        <RegisterButton onClick={register}>Register</RegisterButton>
+        <RegisterButton onClick={register} disabled={isSubmitting}>
+          {isSubmitting ? 'Registering...' : 'Register'}
+        </RegisterButton>
       </FormCard>
     </RegisterContainer>
   );
