@@ -90,6 +90,11 @@ GuardianSync empowers schools, parents, and drivers by providing:
 
 ---
 
+Live link:
+Admin portal:https://guardian-link-jp2f.vercel.app/
+Parent portal:https://guardian-link-seven.vercel.app/
+Backend:https://guardian-link-backend.onrender.com
+
 ## ▶️ Running the Application
 
 ### Parent & Admin Portals
